@@ -4,7 +4,6 @@ from django.db import models
 
 class Sample(models.Model):
     socName = models.CharField(max_length=128, null=True)
-
     # foreignKey model fileHeader
     # save as str  json.dumps(headerObj)
     # "header": {
@@ -78,3 +77,20 @@ class CloudData(models.Model):
 class Tag(models.Model):
     image = models.ForeignKey(ImageInfo, related_name="imageTags", on_delete=models.CASCADE, null=True)
     tagName = models.CharField(max_length=128)
+
+
+class ClassesSet(models.Model):
+    setName = models.CharField(max_length=128)
+
+
+class ClassesSetObject(models.Model):
+    classSet =  models.ForeignKey(ClassesSet, related_name="setObject", on_delete=models.CASCADE)
+    label = models.CharField(max_length=64)
+    color = models.CharField(max_length=64)
+    classIndex = models.IntegerField(null=True)
+    mute = models.BooleanField(null=True)
+    solo = models.BooleanField(null=True)
+    visible = models.BooleanField(null=True)
+    red = models.CharField(max_length=64, null=True)
+    green = models.CharField(max_length=64, null=True)
+    blue = models.CharField(max_length=64, null=True)

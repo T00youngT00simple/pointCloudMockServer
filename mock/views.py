@@ -6,14 +6,14 @@ from toolset.apilnlines import extractApiKwargs
 from django.utils.translation import ugettext as _
 from django.db import transaction
 
-from .models import ImageInfo, CloudData, Sample, Tag
+from .models import ImageInfo, CloudData, Sample, Tag, ClassesSet
 import json
 
 class cloudData(APIView):
     # if cloudData:
     #     cloudData: how to save
 
-    # {  cloudData
+    # {  //cloudData
     #      "bus": [0, 1, 2, 3, 4, 5, 7, 8, 99, 2323, 45454],
     #      "road": [222, 223, 224, 225, 260, 278, 12332, 412411],
     #      "car": [124512, 433434],
@@ -63,7 +63,7 @@ class cloudData(APIView):
 
 class getImageInfoList(APIView):
     # res from api
-    # { imageInfoList
+    # { //imageInfoList
     #     [
     #         {
     #             id: ,
@@ -92,8 +92,8 @@ class getImageInfoList(APIView):
 
 
 class getImageInfoDetail(APIView):
-    # { image Details
-    #       id: ,
+    # { //imageDetails
+    #       id: 1,
     #       name: "bitmap_labeling.png",
     #       url: "//bitmap_labeling.png",
     # },
@@ -116,7 +116,7 @@ class getImageInfoDetail(APIView):
 
 
 class samples(APIView):
-    # { samples
+    # { //samples
     #      "id": "1",
     #      "url": "http:// ....pointcloud_labeling.pcd",
     #      "socName": "Cityscapes",
@@ -217,8 +217,50 @@ class samples(APIView):
 
 
 class tagList(APIView):
+    # [ //tags
+    #   "1", "sdfs", "sdfsdf"
+    # ]
     def get(self, request, format=None):
 
         tagObjList = Tag.objects.all()
 
         return Response({"tags": [tagObj.tagName for tagObj in tagObjList ]})
+
+
+class getClassesSets(APIView):
+    # [ //classSet
+    #     {
+    #         "name": "Cityscapes",
+    #         "objects": [
+    #             {
+    #                 "label": "VOID",
+    #                 "color": "#CFCFCF",
+    #                 "classIndex": 0,
+    #                 "mute": False,
+    #                 "solo": False,
+    #                 "visible": True,
+    #                 "red": 0.80859375,
+    #                 "green": 0.80859375,
+    #                 "blue": 0.80859375
+    #             }]
+    # ]
+    def get(self, request, format=None):
+        classesSets = [ {
+            "name": classesSetObj.setName,
+            "objects": [
+                {
+                    "label": setObejct.label,
+                    "color": setObejct.color,
+                    "classIndex": setObejct.classIndex,
+                    "mute": setObejct.mute,
+                    "solo": setObejct.solo,
+                    "visible": setObejct.visible,
+                    "red": setObejct.red,
+                    "green": setObejct.green,
+                    "blue": setObejct.blue,
+                }
+                for setObejct in classesSetObj.setObject.all() ]
+        } for classesSetObj in ClassesSet.objects.all() ]
+
+        return Response({"classesSets": classesSets})
+

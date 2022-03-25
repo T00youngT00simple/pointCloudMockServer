@@ -19,17 +19,18 @@ from mock import views
 from django.conf.urls import *
 
 
-
-urlpatterns = [
-    url(r'image/list/', views.getImageInfoList.as_view(), name="image-list"),
-    url(r'image/(\w+)/details/', views.getImageInfoDetail.as_view(), name="image-detail"),
-
-    url(r'image/(\w+)/cloud/data/', views.cloudData.as_view(), name="cloud-data"),
-
-    url(r'image/(\w+)/sample/details/', views.samples.as_view(), name="sample"),
-
-    url(r'image/tag/list/', views.tagList.as_view(), name="tagList"),
-
+imageUrlPatterns = [
+    url(r'list/', views.getImageInfoList.as_view(), name="image-list"),
+    url(r'(\w+)/details/', views.getImageInfoDetail.as_view(), name="image-detail"),
+    url(r'(\w+)/cloud/data/', views.cloudData.as_view(), name="cloud-data"),
+    url(r'(\w+)/sample/details/', views.samples.as_view(), name="sample"),
+    url(r'tag/list/', views.tagList.as_view(), name="tag-list"),
 ]
 
+urlpatterns = [
+    url(r'^image/', include(imageUrlPatterns)),
+]
 
+urlpatterns += [
+    url(r'classes/set/', views.getClassesSets.as_view(), name="classes-set"),
+]
