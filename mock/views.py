@@ -4,8 +4,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from toolset.apilnlines import extractApiKwargs
 from django.utils.translation import ugettext as _
+from django.db import transaction
 
-from .models import ImageInfo, CloudData, Sample
+from .models import ImageInfo, CloudData, Sample, Tag
 import json
 
 class cloudData(APIView):
@@ -34,10 +35,10 @@ class cloudData(APIView):
             else:
                 cloudData[cloudDataInfoObj.labelName].append(cloudDataInfoObj.pointIndex)
 
-
         return Response({"cloudData": cloudData})
 
 
+    @transaction.atomic
     def post(self, request, imageId, format=None):
         if not imageId :
             raise ValidationError(_("Image required"))
@@ -48,9 +49,8 @@ class cloudData(APIView):
 
         imageInfoObj = ImageInfo.objects.get(pk=imageId)
 
-        CloudData.objects.filter(image_id=imageId).delete()
-
         if cloudData :
+            CloudData.objects.filter(image_id=imageId).delete()
 
             for selectedLabelName, value in cloudData.items():
                 for pointIndex in value:
@@ -64,7 +64,7 @@ class cloudData(APIView):
 class getImageInfoList(APIView):
     # res from api
     # { imageInfoList
-    #  [
+    #     [
     #         {
     #             id: ,
     #             name: "bitmap_labeling.png",
@@ -74,19 +74,19 @@ class getImageInfoList(APIView):
     #             name: "bitmap_labeling.png",
     #             url: "//bitmap_labeling.png",
     #         }
-    #  ]
+    #     ]
     # }
     def get(self, request, format=None):
-        imageInfoObj = ImageInfo.objects.all()
+        imageInfoObjList = ImageInfo.objects.all()
 
-        if not imageInfoObj:
+        if not imageInfoObjList:
             return Response({"images": []})
         else:
             imageInfoList = [{
                 "id": imageInfo.id,
                 "name": imageInfo.name,
                 "url": imageInfo.filePath
-            } for imageInfo in imageInfoObj]
+            } for imageInfo in imageInfoObjList]
 
             return Response({"images": imageInfoList})
 
@@ -124,7 +124,6 @@ class samples(APIView):
     #      "rotationX": 0,
     #      "rotationY": 0,
     #      "rotationZ": 0,
-    #      "folder": "",
     #      "file": "pointcloud_labeling.pcd",
     #      "tags": [
     #           "1",
@@ -148,6 +147,7 @@ class samples(APIView):
 
                 sampleDic = {
                     "id": sampleObj.id,
+                    "imageId": imageInfoObj.id,
                     "header": sampleObj.header and json.loads(sampleObj.header) or {},
                     "url": imageInfoObj.filePath,
                     "socName": sampleObj.socName,
@@ -155,32 +155,41 @@ class samples(APIView):
                     "rotationY": sampleObj.rotationY,
                     "rotationZ": sampleObj.rotationZ,
                     "file": imageInfoObj.name,
-                    "tags": sampleObj.tags and json.loads(sampleObj.tags) or [],
+                    "tags": [tagObj and tagObj.tagName or None for tagObj in imageInfoObj.imageTags.all()],
                 }
 
             return Response({"sample": sampleDic})
 
 
+    @transaction.atomic
     def post(self, request, imageId, format=None):
         if not imageId:
             raise ValidationError(_("Image required"))
 
-        kwargs = extractApiKwargs(request.data, ['header', 'rotationX', 'rotationY', 'rotationZ', 'socName'])
+        kwargs = extractApiKwargs(request.data, ['header', 'rotationX', 'rotationY', 'rotationZ', 'socName', 'tags'])
         header = kwargs.get("header")
         socName = kwargs.get("socName")
         rotationX = kwargs.get("rotationX")
         rotationY = kwargs.get("rotationY")
         rotationZ = kwargs.get("rotationZ")
+        tags = kwargs.get("tags")
 
         imageInfoObj = ImageInfo.objects.get(pk=imageId)
 
         if not imageInfoObj:
             raise ValidationError(_("Dont have this image"))
         else:
+            if tags:
+                allTags = [tagObj.tagName for tagObj in Tag.objects.all()]
+
+                tagObjList = [ Tag(image=imageInfoObj, tagName=tag) for tag in tags if tag not in allTags]
+                Tag.objects.bulk_create(tagObjList)
+
             if not imageInfoObj.sample:
                 sample = Sample(socName=socName, header=header and json.dumps(header) or None, rotationX=rotationX,
-                                rotationY=rotationY, rotationZ=rotationZ,)
+                                rotationY=rotationY, rotationZ=rotationZ)
 
+                sample.save()
                 imageInfoObj.sample = sample
                 imageInfoObj.save()
 
@@ -204,5 +213,12 @@ class samples(APIView):
 
                 sample.save()
 
-        return Response({"image": {}})
+        return Response({"sample": {}})
 
+
+class tagList(APIView):
+    def get(self, request, format=None):
+
+        tagObjList = Tag.objects.all()
+
+        return Response({"tags": [tagObj.tagName for tagObj in tagObjList ]})

@@ -21,10 +21,15 @@ from django.conf.urls import *
 
 
 urlpatterns = [
-    url(r'admin/', admin.site.urls),
-
-    url(r'cloud/(\w+)/data/', views.cloudData.as_view(), name="cloud-data"),
     url(r'image/list/', views.getImageInfoList.as_view(), name="image-list"),
-    url(r'sample/(\w+)/details/', views.samples.as_view(), name="sample"),
     url(r'image/(\w+)/details/', views.getImageInfoDetail.as_view(), name="image-detail"),
+
+    url(r'image/(\w+)/cloud/data/', views.cloudData.as_view(), name="cloud-data"),
+
+    url(r'image/(\w+)/sample/details/', views.samples.as_view(), name="sample"),
+
+    url(r'image/tag/list/', views.tagList.as_view(), name="tagList"),
+
 ]
+
+

@@ -56,25 +56,25 @@ class Sample(models.Model):
     #     },
     #     "rowSize": 0
     # },
-    header = models.CharField(max_length=512, null=True)
+    header = models.CharField(max_length=770, null=True)
 
     rotationX = models.IntegerField(default=0)
     rotationY = models.IntegerField(default=0)
     rotationZ = models.IntegerField(default=0)
 
-    # foreignKey model fileHeader
-    # save as str  json.dumps(tagList)
-    tags = models.CharField(max_length=256, null=True)
-
 
 class ImageInfo(models.Model):
     filePath = models.CharField(max_length=256)
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=128)
     sample = models.ForeignKey(Sample, related_name="image", on_delete=models.CASCADE, null=True)
 
 
 class CloudData(models.Model):
     image = models.ForeignKey(ImageInfo, related_name="imageCloudData", on_delete=models.CASCADE)
-    labelName = models.CharField(max_length=256)
-    pointIndex = models.CharField(max_length=256)
+    labelName = models.CharField(max_length=128)
+    pointIndex = models.IntegerField(null=True)
 
+
+class Tag(models.Model):
+    image = models.ForeignKey(ImageInfo, related_name="imageTags", on_delete=models.CASCADE, null=True)
+    tagName = models.CharField(max_length=128)
