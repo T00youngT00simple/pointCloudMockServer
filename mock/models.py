@@ -83,7 +83,7 @@ class ClassesSet(models.Model):
     setName = models.CharField(max_length=128)
 
 
-class ClassesSetObject(models.Model):
+class Classe4sSetObject(models.Model):
     classSet =  models.ForeignKey(ClassesSet, related_name="setObject", on_delete=models.CASCADE)
     label = models.CharField(max_length=64)
     color = models.CharField(max_length=64)

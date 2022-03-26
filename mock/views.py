@@ -228,7 +228,7 @@ class tagList(APIView):
 
 
 class getClassesSets(APIView):
-    # [ //classSet
+    # [ //classesSet
     #     {
     #         "name": "Cityscapes",
     #         "objects": [
@@ -255,9 +255,9 @@ class getClassesSets(APIView):
                     "mute": setObejct.mute,
                     "solo": setObejct.solo,
                     "visible": setObejct.visible,
-                    "red": setObejct.red,
-                    "green": setObejct.green,
-                    "blue": setObejct.blue,
+                    "red": setObejct.red and float(setObejct.red),
+                    "green": setObejct.green and float(setObejct.green),
+                    "blue": setObejct.blue and float(setObejct.biue),
                 }
                 for setObejct in classesSetObj.setObject.all() ]
         } for classesSetObj in ClassesSet.objects.all() ]
