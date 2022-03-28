@@ -74,6 +74,17 @@ class CloudData(models.Model):
     pointIndex = models.IntegerField(null=True)
 
 
+class ObjectData(models.Model):
+    image = models.ForeignKey(ImageInfo, related_name="imageObjectData", on_delete=models.CASCADE)
+    classIndex = models.CharField(max_length=64)
+    objectId = models.CharField(max_length=64)
+
+
+class ObjectDataPointIndex(models.Model):
+    objectData = models.ForeignKey(ObjectData, related_name="objectDataPointIndex", on_delete=models.CASCADE)
+    pointIndex = models.IntegerField(null=True)
+
+
 class Tag(models.Model):
     image = models.ForeignKey(ImageInfo, related_name="imageTags", on_delete=models.CASCADE, null=True)
     tagName = models.CharField(max_length=128)

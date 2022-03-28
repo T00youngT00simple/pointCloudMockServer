@@ -6,7 +6,7 @@ from toolset.apilnlines import extractApiKwargs
 from django.utils.translation import ugettext as _
 from django.db import transaction
 
-from .models import ImageInfo, CloudData, Sample, Tag, ClassesSet
+from .models import ImageInfo, CloudData, Sample, Tag, ClassesSet, ObjectData, ObjectDataPointIndex
 import json
 
 class cloudData(APIView):
@@ -22,18 +22,18 @@ class cloudData(APIView):
         if not imageId :
             raise ValidationError(_("Image required"))
 
-        cloudDataInfoObjList = CloudData.objects.filter(image_id=imageId).all()
+        cloudDataObjList = CloudData.objects.filter(image_id=imageId).all()
         labelNameList = []
 
         cloudData = {}
 
-        for cloudDataInfoObj in cloudDataInfoObjList:
-            if cloudDataInfoObj.labelName not in labelNameList:
-                labelNameList.append(cloudDataInfoObj.labelName)
-                cloudData[cloudDataInfoObj.labelName] = []
+        for cloudDataObj in cloudDataObjList:
+            if cloudDataObj.labelName not in labelNameList:
+                labelNameList.append(cloudDataObj.labelName)
+                cloudData[cloudDataObj.labelName] = []
 
             else:
-                cloudData[cloudDataInfoObj.labelName].append(cloudDataInfoObj.pointIndex)
+                cloudData[cloudDataObj.labelName].append(cloudDataObj.pointIndex)
 
         return Response({"cloudData": cloudData})
 
@@ -45,7 +45,7 @@ class cloudData(APIView):
 
         kwargs = extractApiKwargs(request.data, ['cloudData'])
         cloudData = kwargs.get('cloudData')
-        cloudDataInfoList = []
+        cloudDataInfoObjList = []
 
         imageInfoObj = ImageInfo.objects.get(pk=imageId)
 
@@ -54,9 +54,72 @@ class cloudData(APIView):
 
             for selectedLabelName, value in cloudData.items():
                 for pointIndex in value:
-                    cloudDataInfoList.append(CloudData(image=imageInfoObj, labelName=selectedLabelName, pointIndex=pointIndex))
+                    cloudDataInfoObjList.append(CloudData(image=imageInfoObj, labelName=selectedLabelName, pointIndex=pointIndex))
 
-            CloudData.objects.bulk_create(cloudDataInfoList)
+            CloudData.objects.bulk_create(cloudDataInfoObjList)
+
+        return Response({})
+
+
+class objectData(APIView):
+    #[  //objectData
+    #     {
+    #         "id": "LfbQJLPG8inbxvwFZ",
+    #         "classIndex": 22,
+    #         "points": [6479, 6510, 9327, 9359]
+    #     },{
+    #         "id": "LfbQJLPG8inbxvwFZ",
+    #         "classIndex": 22,
+    #         "points": [6479, 6510, 9327, 9359]
+    #     },
+    #],
+
+    def get(self, request, imageId, format=None):
+        if not imageId:
+            raise ValidationError(_("Image required"))
+
+        objectDataList = []
+
+        objectDataObjList = ObjectData.objects.filter(image_id=imageId).all()
+        for objectDataObj in objectDataObjList:
+            objectDataList.append({
+                "id": objectDataObj.objectId,
+                "classIndex": objectDataObj.classIndex,
+                "points": [objectDataPointIndex.pointIndex for objectDataPointIndex in objectDataObj.objectDataPointIndex.all()]
+            })
+
+        return Response({"objectData": objectDataList})
+
+
+    @transaction.atomic
+    def post(self, request, imageId, format=None):
+        if not imageId:
+            raise ValidationError(_("Image required"))
+
+        kwargs = extractApiKwargs(request.data, ['objectData'])
+        objectDataList = kwargs.get('objectData')
+
+        imageInfoObj = ImageInfo.objects.get(pk=imageId)
+
+        if objectDataList:
+            ObjectData.objects.filter(image_id=imageId).delete()
+
+            for objectData in objectDataList:
+
+                if len(objectData.get('points')) > 0:
+
+                    objectDataObj = ObjectData.objects.filter(objectId=objectData.get('id')).first()
+
+                    if not objectDataObj:
+                        objectDataObj = ObjectData(image=imageInfoObj, classIndex=objectData.get('classIndex'), objectId=objectData.get('id'))
+                        objectDataObj.save()
+
+                    objectDataPointIndexObjList = []
+
+                    for pointIndex in objectData.get('points'):
+                        objectDataPointIndexObjList.append(ObjectDataPointIndex(objectData=objectDataObj, pointIndex=pointIndex))
+
+                    ObjectDataPointIndex.objects.bulk_create(objectDataPointIndexObjList)
 
         return Response({})
 
