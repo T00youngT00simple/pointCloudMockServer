@@ -257,7 +257,7 @@ class getClassesSets(APIView):
                     "visible": setObejct.visible,
                     "red": setObejct.red and float(setObejct.red),
                     "green": setObejct.green and float(setObejct.green),
-                    "blue": setObejct.blue and float(setObejct.biue),
+                    "blue": setObejct.blue and float(setObejct.blue),
                 }
                 for setObejct in classesSetObj.setObject.all() ]
         } for classesSetObj in ClassesSet.objects.all() ]
